@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DICCIONARIO DE DATOS SNIS</title>
+  <!-- Librería XLSX desde CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    h1 { text-align: center; color: #2c3e50; font-size: 2rem; text-transform: uppercase; margin-bottom: 25px; }
+    .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #ccc; flex-wrap: wrap; }
+    .tab { padding: 0.7em 1.2em; cursor: pointer; border: 1px solid #ccc; border-bottom: none; background: #eee; margin-right: 5px; border-radius: 8px 8px 0 0; font-size: 1em; }
+    .tab.active { background: white; font-weight: bold; color: #2c3e50; border-bottom: 2px solid white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    #searchBox { margin: 20px auto; display: block; padding: 0.5em; width: 90%; max-width: 500px; font-size: 1em; }
+    .filters { margin: 10px 0; display: flex; gap: 15px; flex-wrap: wrap; }
+    select { padding: 0.4em; font-size: 1em; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; font-size: 0.95em; }
+    th, td { border: 1px solid #ccc; padding: 0.5em; text-align: left; word-wrap: break-word; white-space: normal; }
+    th { background: #2c3e50; color: white; font-size: 1em; }
+    tr:nth-child(even) { background: #f2f2f2; }
+
+    /* Responsividad */
+    @media (max-width: 900px) {
+      .tabs { flex-direction: column; }
+      .tab { margin-bottom: 5px; margin-right: 0; }
+      #searchBox { width: 100%; }
+      table, th, td { font-size: 0.95em; }
+    }
+    @media (max-width: 600px) {
+      body { margin: 5px; }
+      h1 { font-size: 1.2rem; }
+      .tab { font-size: 0.95em; padding: 0.5em 0.7em; }
+      .filters { flex-direction: column; gap: 8px; }
+      table, th, td { font-size: 0.9em; }
+      th, td { padding: 0.3em; }
+    }
+    @media (max-width: 400px) {
+      h1 { font-size: 1em; }
+      .tab { font-size: 0.85em; }
+      table, th, td { font-size: 0.8em; }
+    }
+  </style>
+</head>
+<body>
+  <h1>DICCIONARIO DE DATOS SNIS</h1>
+  <!-- Caja de búsqueda -->
+  <input type="text" id="searchBox" placeholder="Buscar por Variable...">
+
+  <!-- Pestañas -->
+  <div class="tabs" id="tabs"></div>
+
+  <!-- Contenedor de contenido -->
+  <div id="tabContents"></div>
+
+  <script>
+    async function cargarBase() {
+      const response = await fetch("base.xlsx");
+      const arrayBuffer = await response.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const nombreHoja = workbook.SheetNames[0];
+      const hoja = workbook.Sheets[nombreHoja];
+      const datos = XLSX.utils.sheet_to_json(hoja);
+
+      // Agrupar por Formulario
+      const formularios = {};
+      datos.forEach(fila => {
+        const form = fila.Formulario;
+        if (!formularios[form]) formularios[form] = [];
+        formularios[form].push(fila);
+      });
+
+      const tabs = document.getElementById("tabs");
+      const tabContents = document.getElementById("tabContents");
+
+      Object.keys(formularios).forEach((form, index) => {
+        const tab = document.createElement("div");
+        tab.className = "tab" + (index === 0 ? " active" : "");
+        tab.textContent = "Formulario " + form;
+        tab.dataset.form = form;
+        tabs.appendChild(tab);
+
+        const content = document.createElement("div");
+        content.className = "tab-content" + (index === 0 ? " active" : "");
+        content.id = "content-" + form;
+
+        const filtersDiv = document.createElement("div");
+        filtersDiv.className = "filters";
+
+        // Selector por gestión
+        const selectGestion = document.createElement("select");
+        selectGestion.innerHTML = `<option value="todos">Todas las gestiones</option>`;
+        for (let year = 2010; year <= 2025; year++) {
+          selectGestion.innerHTML += `<option value="${year}">${year}</option>`;
+        }
+        filtersDiv.appendChild(selectGestion);
+
+        // Selector por grupo
+        const selectGrupo = document.createElement("select");
+        selectGrupo.innerHTML = `<option value="todos">Todos los grupos</option>`;
+        const gruposUnicos = [...new Set(formularios[form].map(f => f.Grupo))];
+        gruposUnicos.forEach(gr => {
+          selectGrupo.innerHTML += `<option value="${gr}">${gr}</option>`;
+        });
+        filtersDiv.appendChild(selectGrupo);
+
+        content.appendChild(filtersDiv);
+
+        // Crear tabla
+        const table = document.createElement("table");
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>Formulario</th>
+              <th>Código</th>
+              <th>Variable</th>
+              <th>SubVariable</th>
+              <th>Grupo</th>
+              <th>Gestión</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        `;
+        content.appendChild(table);
+        tabContents.appendChild(content);
+
+        const tbody = table.querySelector("tbody");
+
+        function renderFilas(gestionSel, grupoSel) {
+          tbody.innerHTML = "";
+          formularios[form].forEach(fila => {
+            const matchG = (gestionSel === "todos" || fila.Gestión == gestionSel);
+            const matchGr = (grupoSel === "todos" || fila.Grupo == grupoSel);
+            if (matchG && matchGr) {
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td>${fila.Formulario || ""}</td>
+                <td>${fila.Codigo || ""}</td>
+                <td>${fila.Variable || ""}</td>
+                <td>${fila.SubVariable || ""}</td>
+                <td>${fila.Grupo || ""}</td>
+                <td>${fila.Gestión || ""}</td>
+              `;
+              tbody.appendChild(tr);
+            }
+          });
+        }
+
+        renderFilas("todos", "todos");
+
+        selectGestion.addEventListener("change", () => renderFilas(selectGestion.value, selectGrupo.value));
+        selectGrupo.addEventListener("change", () => renderFilas(selectGestion.value, selectGrupo.value));
+
+        tab.addEventListener("click", () => {
+          document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+          document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+          tab.classList.add("active");
+          content.classList.add("active");
+        });
+      });
+
+      // Añadir pestaña de cambios
+      await cargarCambios(tabs, tabContents);
+    }
+
+    async function cargarCambios(tabs, tabContents) {
+      const archivos = ["f301.xlsx", "f302.xlsx", "f303.xlsx", "f304.xlsx", "f305.xlsx"];
+
+      const tab = document.createElement("div");
+      tab.className = "tab";
+      tab.textContent = "Cambios en las Variables";
+      tabs.appendChild(tab);
+
+      const content = document.createElement("div");
+      content.className = "tab-content";
+      content.id = "content-cambios";
+
+      // Selector de formulario
+      const selectFormulario = document.createElement("select");
+      archivos.forEach(f => {
+        const form = f.replace(".xlsx", "");
+        selectFormulario.innerHTML += `<option value="${f}">${form.toUpperCase()}</option>`;
+      });
+      content.appendChild(selectFormulario);
+
+      // Selector de vista
+      const selectVista = document.createElement("select");
+      selectVista.innerHTML = `
+        <option value="grupo">CAMBIO EN GRUPO</option>
+        <option value="general">CAMBIOS GENERALES</option>
+        <option value="codigo">CAMBIOS EN EL CODIGO</option>
+      `;
+      content.appendChild(selectVista);
+
+      // Tabla
+      const table = document.createElement("table");
+      const tbody = document.createElement("tbody");
+      table.appendChild(tbody);
+      content.appendChild(table);
+
+      tabContents.appendChild(content);
+
+      async function renderCambios(archivo, tipo) {
+        const response = await fetch(archivo);
+        const arrayBuffer = await response.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: "array" });
+
+        const baseName = archivo.replace("f","").replace(".xlsx","");
+        const hoja1 = XLSX.utils.sheet_to_json(workbook.Sheets[baseName], { defval: "" });
+        const hoja2 = XLSX.utils.sheet_to_json(workbook.Sheets[baseName+"l"], { defval: "" });
+
+        tbody.innerHTML = "";
+
+        if (tipo === "grupo") {
+          table.innerHTML = `
+            <thead>
+              <tr>
+                <th>NUMERO DE GRUPO</th>
+                <th>NOMBRE DEL GRUPO</th>
+                <th>AÑOS EN LOS QUE ESTA PRESENTE</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          `;
+          hoja1.forEach(fila => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${fila["NUMERO DE GRUPO"] || ""}</td>
+              <td>${fila["NOMBRE DEL GRUPO"] || ""}</td>
+              <td>${fila["AÑOS EN LOS QUE ESTA PRESENTE"] || ""}</td>
+            `;
+            table.querySelector("tbody").appendChild(tr);
+          });
+
+        } else if (tipo === "general") {
+          table.innerHTML = `
+            <thead>
+              <tr>
+                <th>NOMBRE VARIABLE</th>
+                <th>GRUPO EN LOS QUE ESTA PRESENTE</th>
+                <th>AÑOS EN LOS QUE ESTA PRESENTE</th>
+                <th>CAMBIO EN EL CODIGO</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          `;
+          hoja2.forEach(fila => {
+            const cambio = fila["CAMBIO EN EL CODIGO"] 
+              ? fila["CAMBIO EN EL CODIGO"].split(";").join("<br>") 
+              : "Sin cambios";
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${fila["NOMBRE VARIABLE"] || ""}</td>
+              <td>${fila["GRUPO EN LOS QUE ESTA PRESENTE"] || ""}</td>
+              <td>${fila["AÑOS EN LOS QUE ESTA PRESENTE"] || ""}</td>
+              <td>${cambio}</td>
+            `;
+            table.querySelector("tbody").appendChild(tr);
+          });
+
+        } else if (tipo === "codigo") {
+          table.innerHTML = `
+            <thead>
+              <tr>
+                <th>NOMBRE VARIABLE</th>
+                <th>CAMBIO EN EL CODIGO</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          `;
+          hoja2.forEach(fila => {
+            const cambio = fila["CAMBIO EN EL CODIGO"] 
+              ? fila["CAMBIO EN EL CODIGO"].split(";").join("<br>") 
+              : "Sin cambios";
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${fila["NOMBRE VARIABLE"] || ""}</td>
+              <td>${cambio}</td>
+            `;
+            table.querySelector("tbody").appendChild(tr);
+          });
+        }
+      }
+
+      // Render inicial
+      renderCambios(selectFormulario.value, selectVista.value);
+
+      // Listeners
+      selectFormulario.addEventListener("change", () => renderCambios(selectFormulario.value, selectVista.value));
+      selectVista.addEventListener("change", () => renderCambios(selectFormulario.value, selectVista.value));
+
+      // Evento pestaña
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+        tab.classList.add("active");
+        content.classList.add("active");
+      });
+    }
+
+    // Búsqueda global
+    document.getElementById("searchBox").addEventListener("input", function () {
+      const filtro = this.value.toLowerCase();
+      document.querySelectorAll("tbody tr").forEach(fila => {
+        const texto = fila.textContent.toLowerCase();
+        fila.style.display = texto.includes(filtro) ? "" : "none";
+      });
+    });
+
+    cargarBase();
+  </script>
+</body>
+</html> 
