@@ -1,0 +1,2 @@
+# snis-diccionario
+diccionario
