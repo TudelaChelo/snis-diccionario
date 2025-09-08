@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>DICCIONARIO DE DATOS SNIS</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: "Segoe UI", Arial, sans-serif; background: #f5f5f5; color: #333; margin: 0; padding: 20px; }
+    h2 { text-align: center; margin-bottom: 20px; color: #222; }
+    h3 { margin-top: 20px; color: #444; }
+    .tabs { display: flex; border-bottom: 2px solid #bbb; margin-bottom: 15px; flex-wrap: wrap; }
+    .tab { padding: 10px 20px; cursor: pointer; border: 1px solid #bbb; border-bottom: none; background: #e0e0e0; margin-right: 5px; border-top-left-radius: 6px; border-top-right-radius: 6px; transition: background 0.2s; }
+    .tab:hover { background: #d6d6d6; }
+    .tab.active { background: #fff; font-weight: bold; border-bottom: 2px solid #fff; }
+    .tab-content { display: none; padding: 15px; border: 1px solid #bbb; background: #fff; border-radius: 0 6px 6px 6px; }
+    .tab-content.active { display: block; }
+    select, input { padding: 6px; margin: 5px; font-size: 14px; border: 1px solid #aaa; border-radius: 4px; background: #fafafa; }
+    .table-container { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 12px; }
+    th, td { border: 1px solid #bbb; padding: 6px; text-align: center; }
+    th { background: #555; color: white; }
+    tr:nth-child(even) { background: #f0f0f0; }
+    tr:hover { background: #e0e0e0; }
+    .download-btn { margin: 10px 0; padding: 6px 14px; border: 1px solid #555; background: #e0e0e0; cursor: pointer; border-radius: 4px; transition: background 0.2s; }
+    .download-btn:hover { background: #cfcfcf; }
+    .checkbox-group { display: flex; flex-wrap: wrap; max-height: 180px; overflow-y: auto; border: 1px solid #aaa; padding: 5px; border-radius: 4px; background: #fafafa; }
+    .checkbox-group label { width: 45%; margin: 2px 5px; cursor: pointer; }
+    .changed { color: red; font-weight: bold; }
+    .summary { background: #fafafa; border: 1px solid #ccc; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
+  </style>
+</head>
+<body>
+  <h2>DICCIONARIO DE DATOS SNIS</h2>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" data-tab="timeline">CAMBIOS EN EL TIEMPO</div>
+    <div class="tab" data-tab="subvar">CAMBIOS SUBVARIABLE</div>
+    <div class="tab" data-tab="form301">Formulario 301</div>
+    <div class="tab" data-tab="form302">Formulario 302</div>
+    <div class="tab" data-tab="form303">Formulario 303</div>
+    <div class="tab" data-tab="form304">Formulario 304</div>
+    <div class="tab" data-tab="form305">Formulario 305</div>
+  </div>
+
+  <!-- Timeline -->
+  <div id="timeline" class="tab-content active">
+    <div>
+      <select id="formSelect"><option value="">-- Selecciona Formulario --</option></select>
+      <div id="desvarCheckboxes" class="checkbox-group"></div>
+      <select id="codsubvarSelect"><option value="">-- Selecciona Subvariable --</option></select>
+    </div>
+    <button class="download-btn" onclick="downloadTable('timelineTable','timeline.xlsx')">Descargar Excel</button>
+    <div class="table-container" id="timelineTable"></div>
+  </div>
+
+  <!-- Cambios Subvariable -->
+  <div id="subvar" class="tab-content">
+    <div>
+      <select id="formSelectSub"><option value="">-- Selecciona Formulario --</option></select>
+      <select id="desvarSelectSub"><option value="">-- Selecciona Variable --</option></select>
+    </div>
+    <button class="download-btn" onclick="downloadTable('subvarTable','cambios_subvariable.xlsx')">Descargar Excel</button>
+    <div class="table-container" id="subvarTable"></div>
+  </div>
+
+  <!-- Formularios -->
+  <div id="form301" class="tab-content"><div id="dic301"></div></div>
+  <div id="form302" class="tab-content"><div id="dic302"></div></div>
+  <div id="form303" class="tab-content"><div id="dic303"></div></div>
+  <div id="form304" class="tab-content"><div id="dic304"></div></div>
+  <div id="form305" class="tab-content"><div id="dic305"></div></div>
+
+  <script>
+    let data = [];
+
+    // ===============================
+    // Cargar Excel
+    // ===============================
+    async function loadExcel() {
+      const response = await fetch("df_DICCIONARIO.xlsx");
+      const arrayBuffer = await response.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(sheet);
+
+      data = raw.map(d => ({
+        idgestion: d.idgestion,
+        codform: d.codform,
+        codgrup: d.codgrup,
+        codsubvar: d.codsubvar,
+        desvariabl: d.desvariabl,
+        desabrev: d.desabrev,
+        desgrup: d.desgrup,
+        desVAR: d.desVAR
+      }));
+
+      // llenar select de formularios en timeline y subvar
+      const forms = [...new Set(data.map(d => d.codform))].sort();
+      const formSelect = document.getElementById("formSelect");
+      const formSelectSub = document.getElementById("formSelectSub");
+      forms.forEach(f => {
+        formSelect.innerHTML += `<option value="${f}">Formulario ${f}</option>`;
+        formSelectSub.innerHTML += `<option value="${f}">Formulario ${f}</option>`;
+      });
+
+      // construir diccionarios de cada formulario
+      forms.forEach(f => buildFormDic(f));
+    }
+
+    // ===============================
+    // Construir Timeline (ya implementado)
+    // ===============================
+    function buildTimeline(codform, selectedVars, codsubvar) {
+      let filtered = data;
+      if (codform) filtered = filtered.filter(d => d.codform == codform);
+
+      const desvars = [...new Set(data.filter(d => d.codform == codform).map(d => d.desVAR))].sort();
+
+      // Checkboxes
+      const boxDiv = document.getElementById("desvarCheckboxes");
+      boxDiv.innerHTML = "";
+      desvars.forEach(v => {
+        const lbl = document.createElement("label");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.value = v;
+        if (selectedVars.includes(v)) cb.checked = true;
+        lbl.appendChild(cb);
+        lbl.append(" " + v);
+        boxDiv.appendChild(lbl);
+      });
+
+      if (selectedVars.length) {
+        filtered = filtered.filter(d => selectedVars.includes(d.desVAR));
+      }
+
+      const codsubs = [...new Set(filtered.map(d => d.codsubvar))].sort();
+      const codsubSelect = document.getElementById("codsubvarSelect");
+      codsubSelect.innerHTML = "<option value=''>-- Selecciona Subvariable --</option>";
+      codsubs.forEach(c => codsubSelect.innerHTML += `<option value="${c}">${c}</option>`);
+
+      if (codsubvar) filtered = filtered.filter(d => d.codsubvar == codsubvar);
+
+      if (!filtered.length) {
+        document.getElementById("timelineTable").innerHTML = "";
+        return;
+      }
+
+      const gestiones = [...new Set(filtered.map(d => d.idgestion))].sort((a,b)=>a-b);
+      const atributos = ["desvariabl", "desgrup", "desabrev", "codsubvar", "codgrup"];
+
+      let html = `<table><thead><tr><th>Atributo</th>`;
+      gestiones.forEach(g => {
+        selectedVars.forEach(vName => html += `<th>${g}<br>${vName}</th>`);
+      });
+      html += "</tr></thead><tbody>";
+
+      atributos.forEach(attr => {
+        let prevValues = {};
+        html += `<tr><td><b>${attr}</b></td>`;
+        gestiones.forEach(g => {
+          selectedVars.forEach(vName => {
+            const v = filtered.find(d => d.idgestion == g && d.desVAR == vName);
+            const value = v ? v[attr] : "";
+            const changed = prevValues[vName] !== undefined && prevValues[vName] !== value;
+            html += `<td ${changed ? 'class="changed"' : ""}>${value}</td>`;
+            prevValues[vName] = value;
+          });
+        });
+        html += "</tr>";
+      });
+
+      html += "</tbody></table>";
+      document.getElementById("timelineTable").innerHTML = html;
+    }
+
+    // ===============================
+    // Construir CAMBIOS SUBVARIABLE
+    // ===============================
+    function buildSubvar(codform, desvar) {
+      let filtered = data;
+      if (codform) filtered = filtered.filter(d => d.codform == codform);
+
+      // Variables únicas
+      const desvars = [...new Set(filtered.map(d => d.desVAR))].sort();
+      const desvarSelect = document.getElementById("desvarSelectSub");
+      desvarSelect.innerHTML = "<option value=''>-- Selecciona Variable --</option>";
+      desvars.forEach(v => desvarSelect.innerHTML += `<option value="${v}" ${v==desvar?"selected":""}>${v}</option>`);
+
+      if (desvar) filtered = filtered.filter(d => d.desVAR == desvar);
+
+      if (!filtered.length) {
+        document.getElementById("subvarTable").innerHTML = "";
+        return;
+      }
+
+      const gestiones = [...new Set(filtered.map(d => d.idgestion))].sort((a,b)=>a-b);
+      const codsubs = [...new Set(filtered.map(d => d.codsubvar))].sort();
+
+      let html = `<table><thead><tr><th>CodSubvar</th>`;
+      gestiones.forEach(g => html += `<th>${g}</th>`);
+      html += "</tr></thead><tbody>";
+
+      codsubs.forEach(sub => {
+        let prevValue = null;
+        html += `<tr><td><b>${sub}</b></td>`;
+        gestiones.forEach(g => {
+          const v = filtered.find(d => d.idgestion == g && d.codsubvar == sub);
+          const value = v ? v.desvariabl : "";
+          const changed = prevValue !== null && prevValue !== value;
+          html += `<td ${changed ? 'class="changed"' : ""}>${value}</td>`;
+          prevValue = value;
+        });
+        html += "</tr>";
+      });
+
+      html += "</tbody></table>";
+      document.getElementById("subvarTable").innerHTML = html;
+    }
+
+    // ===============================
+    // Diccionario de cada formulario
+    // ===============================
+    function buildFormDic(codform) {
+      const filtered = data.filter(d => d.codform == codform);
+      if (!filtered.length) return;
+      const container = document.getElementById("dic" + codform);
+      const resumen = document.createElement("div");
+      resumen.className = "summary";
+      const totalVars = new Set(filtered.map(d => d.desVAR)).size;
+      const totalSubs = new Set(filtered.map(d => d.codsubvar)).size;
+      const gestiones = filtered.map(d => d.idgestion);
+      const minGest = Math.min(...gestiones);
+      const maxGest = Math.max(...gestiones);
+      resumen.innerHTML = `<b>Resumen Formulario ${codform}</b><br>
+        Total Variables: ${totalVars}<br>
+        Total Subvariables: ${totalSubs}<br>
+        Rango de gestiones: ${minGest} - ${maxGest}`;
+      container.appendChild(resumen);
+
+      const vars = [...new Set(filtered.map(d => d.desVAR))].sort();
+      vars.forEach(vName => {
+        const title = document.createElement("h3");
+        title.textContent = vName;
+        container.appendChild(title);
+        const table = document.createElement("table");
+        table.innerHTML = "<thead><tr><th>Gestión</th><th>CodSubvar</th><th>DesVariabl</th><th>DesAbrev</th><th>DesGrup</th></tr></thead>";
+        const tbody = document.createElement("tbody");
+        filtered.filter(d => d.desVAR == vName).sort((a,b)=>a.idgestion-b.idgestion).forEach(d => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${d.idgestion}</td><td>${d.codsubvar}</td><td>${d.desvariabl}</td><td>${d.desabrev}</td><td>${d.desgrup}</td>`;
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        container.appendChild(table);
+      });
+    }
+
+    // ===============================
+    // Descargar tabla
+    // ===============================
+    function downloadTable(divId, filename) {
+      const table = document.querySelector(`#${divId} table`);
+      if (!table) { alert("No hay datos para descargar"); return; }
+      const wb = XLSX.utils.table_to_book(table, {sheet:"Datos"});
+      XLSX.writeFile(wb, filename);
+    }
+
+    // ===============================
+    // Listeners
+    // ===============================
+    document.getElementById("formSelect").addEventListener("change", e => {
+      buildTimeline(e.target.value, [], "");
+    });
+    document.getElementById("codsubvarSelect").addEventListener("change", e => {
+      const checked = [...document.querySelectorAll("#desvarCheckboxes input:checked")].map(c => c.value);
+      buildTimeline(document.getElementById("formSelect").value, checked, e.target.value);
+    });
+    document.getElementById("desvarCheckboxes").addEventListener("change", () => {
+      const checked = [...document.querySelectorAll("#desvarCheckboxes input:checked")].map(c => c.value);
+      buildTimeline(document.getElementById("formSelect").value, checked, document.getElementById("codsubvarSelect").value);
+    });
+    document.getElementById("formSelectSub").addEventListener("change", e => {
+      buildSubvar(e.target.value, "");
+    });
+    document.getElementById("desvarSelectSub").addEventListener("change", e => {
+      buildSubvar(document.getElementById("formSelectSub").value, e.target.value);
+    });
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.tab).classList.add("active");
+      });
+    });
+
+    loadExcel();
+  </script>
+</body>
+</html>
