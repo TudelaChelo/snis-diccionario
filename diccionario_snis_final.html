@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Diccionario de Datos SNIS - Bolivia</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    select {
+      padding: 6px 8px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: 1px solid #aaa;
+      background: #fff;
+    }
+    #statusMsg {
+      font-size: 12px;
+      color: #777;
+      margin-left: 8px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      border-bottom: 2px solid #bbb;
+      margin-bottom: 10px;
+      gap: 4px;
+    }
+    .tab {
+      padding: 8px 14px;
+      cursor: pointer;
+      border: 1px solid #bbb;
+      border-bottom: none;
+      background: #e0e0e0;
+      border-radius: 6px 6px 0 0;
+      font-size: 13px;
+    }
+    .tab.active {
+      background: #fff;
+      font-weight: bold;
+      border-bottom: 2px solid #fff;
+    }
+    .tab-content {
+      display: none;
+      background: #fff;
+      border: 1px solid #bbb;
+      border-radius: 0 6px 6px 6px;
+      padding: 10px 12px;
+      margin-bottom: 20px;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Layouts */
+    .layout-two {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 15px;
+    }
+    @media (max-width: 900px) {
+      .layout-two {
+        grid-template-columns: 1fr;
+      }
+    }
+    .panel {
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      padding: 10px 12px;
+      box-sizing: border-box;
+    }
+    .panel h2 {
+      font-size: 16px;
+      margin: 0 0 8px 0;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 4px;
+    }
+
+    .resumen {
+      margin-bottom: 6px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 11px;
+      background: #eee;
+      margin-right: 4px;
+    }
+
+    .search-box {
+      display: flex;
+      margin: 6px 0;
+    }
+    .search-box input {
+      flex: 1;
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px solid #bbb;
+      font-size: 13px;
+    }
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .pill-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 3px 6px;
+      border-radius: 10px;
+      background: #eee;
+    }
+    .pill-toggle input {
+      margin: 0;
+    }
+    .variable-list {
+      max-height: 380px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 4px;
+      font-size: 13px;
+      background: #fafafa;
+    }
+    .variable-item {
+      padding: 5px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 2px;
+    }
+    .variable-item:hover {
+      background: #e0e0e0;
+    }
+    .variable-item.active {
+      background: #1976d2;
+      color: #fff;
+      font-weight: 600;
+    }
+    .variable-item.changed-tag::after {
+      content: " • Cambios";
+      color: #d32f2f;
+      font-weight: bold;
+    }
+
+    /* Tablas */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 4px 6px;
+      text-align: left;
+    }
+    th {
+      background: #424242;
+      color: #fff;
+    }
+    tr:nth-child(even) {
+      background: #f5f5f5;
+    }
+    td.changed {
+      color: #d32f2f;
+      font-weight: bold;
+    }
+
+    .btn {
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 4px;
+      border: 1px solid #555;
+      background: #e0e0e0;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #d0d0d0;
+    }
+    .small-note {
+      font-size: 11px;
+      color: #777;
+      margin-top: 2px;
+    }
+
+    .stat-box {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: #f3f3f3;
+      border: 1px solid #ddd;
+      font-size: 12px;
+      margin-right: 6px;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Diccionario de Datos SNIS - Bolivia</h1>
+
+<div class="top-bar">
+  <label>
+    Formulario:
+    <select id="formSelect">
+      <option value="">-- Selecciona --</option>
+    </select>
+  </label>
+  <span id="statusMsg"></span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="tabDicc">Diccionario</div>
+  <div class="tab" data-tab="tabTimeline">Línea de tiempo</div>
+  <div class="tab" data-tab="tabCompare">Comparar gestiones</div>
+  <div class="tab" data-tab="tabCharts">Gráficos</div>
+  <div class="tab" data-tab="tabF301">Formulario 301</div>
+  <div class="tab" data-tab="tabF302">Formulario 302</div>
+  <div class="tab" data-tab="tabF303">Formulario 303</div>
+  <div class="tab" data-tab="tabF304">Formulario 304</div>
+  <div class="tab" data-tab="tabF305">Formulario 305</div>
+</div>
+
+<!-- ========== TAB 1: DICCIONARIO ========== -->
+<div id="tabDicc" class="tab-content active">
+  <div class="layout-two">
+    <div class="panel">
+      <h2>Resumen del formulario</h2>
+      <div id="resumenForm" class="resumen">
+        Selecciona un formulario para ver su diccionario.
+      </div>
+      <div class="controls-row">
+        <span class="badge" id="badgeVars">Vars: 0</span>
+        <span class="badge" id="badgeSubs">Subvars: 0</span>
+        <span class="badge" id="badgeGest">Gestiones: 0</span>
+      </div>
+      <div class="controls-row">
+        <div class="search-box">
+          <input id="searchVar" type="text" placeholder="Buscar variable (desVAR, desvariabl, desabrev)..." />
+        </div>
+      </div>
+      <div class="controls-row">
+        <label class="pill-toggle">
+          <input type="checkbox" id="onlyChangedToggle" />
+          Solo variables con cambios
+        </label>
+      </div>
+      <div id="variableList" class="variable-list"></div>
+      <div class="small-note">
+        Haz clic en una variable (desVAR) y luego selecciona un desabrev para ver su diccionario.
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Detalle de variable</h2>
+      <div id="variableTitle" style="font-weight:bold; margin-bottom:4px; font-size:14px;">
+        Ninguna variable seleccionada.
+      </div>
+      <div id="variableMeta" style="font-size:12px; color:#555; margin-bottom:6px;"></div>
+      <div class="controls-row">
+        <label style="font-size:12px;">
+          desabrev:
+          <select id="dicDesabrevSelect">
+            <option value="">-- Selecciona desabrev --</option>
+          </select>
+        </label>
+      </div>
+      <button class="btn" id="btnDownloadVar">Descargar tabla a Excel</button>
+      <div id="detailTableContainer"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TAB 2: LÍNEA DE TIEMPO ========== -->
+<div id="tabTimeline" class="tab-content">
+  <div class="controls-row">
+    <label>
+      Variable (desVAR):
+      <select id="ltDesvarSelect">
+        <option value="">-- Selecciona --</option>
+      </select>
+    </label>
+    <label>
+      Descripción (desvariabl):
+      <select id="ltDesvariablSelect">
+        <option value="">-- Selecciona --</option>
+      </select>
+    </label>
+    <button class="btn" id="btnTimelineExcel">Descargar línea de tiempo</button>
+  </div>
+  <div class="small-note">
+    Selecciona un desVAR y luego la descripción específica (desvariabl) para ver sus cambios a lo largo de las gestiones.
+  </div>
+  <div id="timelineTableContainer"></div>
+</div>
+
+<!-- ========== TAB 3: COMPARAR GESTIONES ========== -->
+<div id="tabCompare" class="tab-content">
+  <div class="controls-row">
+    <label>
+      Gestión A:
+      <select id="cmpGestA">
+        <option value="">-- Selecciona --</option>
+      </select>
+    </label>
+    <label>
+      Gestión B:
+      <select id="cmpGestB">
+        <option value="">-- Selecciona --</option>
+      </select>
+    </label>
+    <button class="btn" id="btnRunCompare">Comparar</button>
+  </div>
+  <div class="controls-row">
+    <div class="stat-box" id="cmpStatNew">Nuevas: 0</div>
+    <div class="stat-box" id="cmpStatDeleted">Eliminadas: 0</div>
+    <div class="stat-box" id="cmpStatChanged">Modificadas: 0</div>
+  </div>
+  <div id="compareTableContainer"></div>
+</div>
+
+<!-- ========== TAB 4: GRÁFICOS GENERALES ========== -->
+<div id="tabCharts" class="tab-content">
+  <div class="small-note">
+    Los gráficos se actualizan automáticamente al cambiar de formulario en el selector superior.
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px;">
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Variables (desVAR) por gestión</h3>
+      <canvas id="chartVarsPerGest"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Subvariables (codsubvar) por gestión</h3>
+      <canvas id="chartSubsPerGest"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Distribución por grupo (desgrup)</h3>
+      <canvas id="chartGroups"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Variables modificadas por gestión</h3>
+      <canvas id="chartChangedPerGest"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TABS FORMULARIO 301–305 ========== -->
+
+<div id="tabF301" class="tab-content">
+  <h2>Formulario 301</h2>
+
+  <div class="controls-row">
+    <div class="search-box">
+      <input id="form301Search" type="text" placeholder="Buscar variable en Formulario 301..." />
+    </div>
+  </div>
+  <div class="controls-row">
+    <label>
+      Grupo (desgrup):
+      <select id="form301GroupSelect">
+        <option value="">Todos los grupos</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="form301SummaryBox" class="resumen"></div>
+  <button class="btn" id="btnForm301DownloadResumen">Descargar resumen</button>
+  <div id="form301ResumenTable"></div>
+  <br>
+  <button class="btn" id="btnForm301DownloadDetalle">Descargar detalle</button>
+  <div id="form301DetalleTable"></div>
+  <br>
+  <button class="btn" id="btnForm301Charts">Generar gráficos</button>
+  <div class="small-note">Los gráficos se generan bajo demanda.</div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px;">
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Variables por gestión</h3>
+      <canvas id="chartF301VarsPerGest"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Subvariables por gestión</h3>
+      <canvas id="chartF301SubsPerGest"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Distribución por grupo (última gestión)</h3>
+      <canvas id="chartF301Groups"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Variables modificadas por gestión</h3>
+      <canvas id="chartF301Changed"></canvas>
+    </div>
+  </div>
+</div>
+
+<div id="tabF302" class="tab-content">
+  <h2>Formulario 302</h2>
+
+  <div class="controls-row">
+    <div class="search-box">
+      <input id="form302Search" type="text" placeholder="Buscar variable en Formulario 302..." />
+    </div>
+  </div>
+  <div class="controls-row">
+    <label>
+      Grupo (desgrup):
+      <select id="form302GroupSelect">
+        <option value="">Todos los grupos</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="form302SummaryBox" class="resumen"></div>
+  <button class="btn" id="btnForm302DownloadResumen">Descargar resumen</button>
+  <div id="form302ResumenTable"></div>
+  <br>
+  <button class="btn" id="btnForm302DownloadDetalle">Descargar detalle</button>
+  <div id="form302DetalleTable"></div>
+  <br>
+  <button class="btn" id="btnForm302Charts">Generar gráficos</button>
+  <div class="small-note">Los gráficos se generan bajo demanda.</div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px;">
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Variables por gestión</h3>
+      <canvas id="chartF302VarsPerGest"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Subvariables por gestión</h3>
+      <canvas id="chartF302SubsPerGest"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Distribución por grupo (última gestión)</h3>
+      <canvas id="chartF302Groups"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Variables modificadas por gestión</h3>
+      <canvas id="chartF302Changed"></canvas>
+    </div>
+  </div>
+</div>
+
+<div id="tabF303" class="tab-content">
+  <h2>Formulario 303</h2>
+
+  <div class="controls-row">
+    <div class="search-box">
+      <input id="form303Search" type="text" placeholder="Buscar variable en Formulario 303..." />
+    </div>
+  </div>
+  <div class="controls-row">
+    <label>
+      Grupo (desgrup):
+      <select id="form303GroupSelect">
+        <option value="">Todos los grupos</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="form303SummaryBox" class="resumen"></div>
+  <button class="btn" id="btnForm303DownloadResumen">Descargar resumen</button>
+  <div id="form303ResumenTable"></div>
+  <br>
+  <button class="btn" id="btnForm303DownloadDetalle">Descargar detalle</button>
+  <div id="form303DetalleTable"></div>
+  <br>
+  <button class="btn" id="btnForm303Charts">Generar gráficos</button>
+  <div class="small-note">Los gráficos se generan bajo demanda.</div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px;">
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Variables por gestión</h3>
+      <canvas id="chartF303VarsPerGest"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Subvariables por gestión</h3>
+      <canvas id="chartF303SubsPerGest"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Distribución por grupo (última gestión)</h3>
+      <canvas id="chartF303Groups"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Variables modificadas por gestión</h3>
+      <canvas id="chartF303Changed"></canvas>
+    </div>
+  </div>
+</div>
+
+<div id="tabF304" class="tab-content">
+  <h2>Formulario 304</h2>
+
+  <div class="controls-row">
+    <div class="search-box">
+      <input id="form304Search" type="text" placeholder="Buscar variable en Formulario 304..." />
+    </div>
+  </div>
+  <div class="controls-row">
+    <label>
+      Grupo (desgrup):
+      <select id="form304GroupSelect">
+        <option value="">Todos los grupos</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="form304SummaryBox" class="resumen"></div>
+  <button class="btn" id="btnForm304DownloadResumen">Descargar resumen</button>
+  <div id="form304ResumenTable"></div>
+  <br>
+  <button class="btn" id="btnForm304DownloadDetalle">Descargar detalle</button>
+  <div id="form304DetalleTable"></div>
+  <br>
+  <button class="btn" id="btnForm304Charts">Generar gráficos</button>
+  <div class="small-note">Los gráficos se generan bajo demanda.</div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px;">
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Variables por gestión</h3>
+      <canvas id="chartF304VarsPerGest"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Subvariables por gestión</h3>
+      <canvas id="chartF304SubsPerGest"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Distribución por grupo (última gestión)</h3>
+      <canvas id="chartF304Groups"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Variables modificadas por gestión</h3>
+      <canvas id="chartF304Changed"></canvas>
+    </div>
+  </div>
+</div>
+
+<div id="tabF305" class="tab-content">
+  <h2>Formulario 305</h2>
+
+  <div class="controls-row">
+    <div class="search-box">
+      <input id="form305Search" type="text" placeholder="Buscar variable en Formulario 305..." />
+    </div>
+  </div>
+  <div class="controls-row">
+    <label>
+      Grupo (desgrup):
+      <select id="form305GroupSelect">
+        <option value="">Todos los grupos</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="form305SummaryBox" class="resumen"></div>
+  <button class="btn" id="btnForm305DownloadResumen">Descargar resumen</button>
+  <div id="form305ResumenTable"></div>
+  <br>
+  <button class="btn" id="btnForm305DownloadDetalle">Descargar detalle</button>
+  <div id="form305DetalleTable"></div>
+  <br>
+  <button class="btn" id="btnForm305Charts">Generar gráficos</button>
+  <div class="small-note">Los gráficos se generan bajo demanda.</div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px;">
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Variables por gestión</h3>
+      <canvas id="chartF305VarsPerGest"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Subvariables por gestión</h3>
+      <canvas id="chartF305SubsPerGest"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Distribución por grupo (última gestión)</h3>
+      <canvas id="chartF305Groups"></canvas>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin:4px 0;">Variables modificadas por gestión</h3>
+      <canvas id="chartF305Changed"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const FORM_CODES = ["301","302","303","304","305"];
+
+  const formSelect        = document.getElementById("formSelect");
+  const statusMsg         = document.getElementById("statusMsg");
+
+  const resumenForm       = document.getElementById("resumenForm");
+  const badgeVars         = document.getElementById("badgeVars");
+  const badgeSubs         = document.getElementById("badgeSubs");
+  const badgeGest         = document.getElementById("badgeGest");
+  const searchVarInput    = document.getElementById("searchVar");
+  const onlyChangedToggle = document.getElementById("onlyChangedToggle");
+  const variableListDiv   = document.getElementById("variableList");
+  const variableTitle     = document.getElementById("variableTitle");
+  const variableMeta      = document.getElementById("variableMeta");
+  const dicDesabrevSelect = document.getElementById("dicDesabrevSelect");
+  const detailTableContainer = document.getElementById("detailTableContainer");
+  const btnDownloadVar    = document.getElementById("btnDownloadVar");
+
+  const ltDesvarSelect    = document.getElementById("ltDesvarSelect");
+  const ltDesvariablSelect= document.getElementById("ltDesvariablSelect");
+  const timelineTableContainer = document.getElementById("timelineTableContainer");
+  const btnTimelineExcel  = document.getElementById("btnTimelineExcel");
+
+  const cmpGestA          = document.getElementById("cmpGestA");
+  const cmpGestB          = document.getElementById("cmpGestB");
+  const btnRunCompare     = document.getElementById("btnRunCompare");
+  const cmpStatNew        = document.getElementById("cmpStatNew");
+  const cmpStatDeleted    = document.getElementById("cmpStatDeleted");
+  const cmpStatChanged    = document.getElementById("cmpStatChanged");
+  const compareTableContainer = document.getElementById("compareTableContainer");
+
+  const chartVarsPerGestCanvas     = document.getElementById("chartVarsPerGest");
+  const chartSubsPerGestCanvas     = document.getElementById("chartSubsPerGest");
+  const chartGroupsCanvas          = document.getElementById("chartGroups");
+  const chartChangedPerGestCanvas  = document.getElementById("chartChangedPerGest");
+
+  let chartVarsPerGest   = null;
+  let chartSubsPerGest   = null;
+  let chartGroups        = null;
+  let chartChangedPerGest= null;
+
+  // Gráficos por formulario (se generan al darle clic al botón)
+  const formCharts = {}; // formCode -> {varsChart, subsChart, groupsChart, changedChart}
+
+  // Data global en memoria
+  let byForm = {};                    // f -> array filas
+  let varsByForm = {};                // f -> array desVAR
+  let gestionesByForm = {};           // f -> array gestiones ordenadas
+  let subvarsCountByForm = {};        // f -> número subvars distintas (codsubvar)
+
+  let indexVarGest = {};              // f -> desVAR -> gestion -> fila representativa
+  let indexVarGestAbrev = {};         // f -> desVAR -> desabrev -> gestion -> fila
+  let indexTimeline = {};             // f -> desVAR -> desvariabl -> gestion -> fila
+  let desvariablByFormVar = {};       // f -> desVAR -> [desvariabl...]
+  let desabrevByFormVar   = {};       // f -> desVAR -> [desabrev...]
+
+  let varsWithChanges = {};           // f -> Set desVAR con cambios
+  let changedPerGest  = {};           // f -> gestion -> nº desVAR con cambio
+
+  // Estado UI
+  let currentForm = null;
+  let currentVar  = null;
+  let currentDicAbrev = null;
+
+  // Estado de pestañas por formulario (para filtros)
+  const formTabState = {}; // formCode -> {rows, resumenDiv, detalleDiv, searchInput, groupSelect}
+
+  const clean = x => (typeof x === "string" ? x.trim() : x);
+
+  // =============== CARGA E INDEXACIÓN ===============
+  async function loadExcel() {
+    try {
+      statusMsg.textContent = "Cargando excel_unido.xlsx...";
+      const resp = await fetch("excel_unido.xlsx");
+      if (!resp.ok) {
+        statusMsg.textContent = "No se encontró excel_unido.xlsx (debe estar en la misma carpeta).";
+        return;
+      }
+      const buf = await resp.arrayBuffer();
+      const wb  = XLSX.read(buf, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const raw  = XLSX.utils.sheet_to_json(sheet);
+
+      const subvarSetByForm = {};
+
+      raw.forEach(row => {
+        const f  = String(clean(row.codform));
+        const g  = Number(row.idgestion);
+        const desVAR       = clean(row.desVAR);
+        const desvariabl   = clean(row.desvariabl);
+        const desabrev     = clean(row.desabrev);
+        const desgrup      = clean(row.desgrup);
+        const desgrupo2024 = clean(row.desgrupo2024);
+        const subvarL      = clean(row.subvarL);
+        const subvariable  = clean(row.subvariable);
+        const codsubvar    = row.codsubvar;
+        const codvariabl   = row.codvariabl;
+        const codgrup      = row.codgrup;
+
+        if (!f || !g || !desVAR) return;
+
+        const obj = {
+          idgestion: g,
+          codform: f,
+          codgrup,
+          codvariabl,
+          codsubvar,
+          desvariabl,
+          desabrev,
+          desgrup,
+          desgrupo2024,
+          desVAR,
+          subvarL,
+          subvariable
+        };
+
+        if (!byForm[f]) byForm[f] = [];
+        byForm[f].push(obj);
+
+        if (!varsByForm[f]) varsByForm[f] = new Set();
+        varsByForm[f].add(desVAR);
+
+        if (!gestionesByForm[f]) gestionesByForm[f] = new Set();
+        gestionesByForm[f].add(g);
+
+        if (!subvarSetByForm[f]) subvarSetByForm[f] = new Set();
+        if (codsubvar !== undefined && codsubvar !== null) {
+          subvarSetByForm[f].add(codsubvar);
+        }
+
+        // Index por (form, desVAR, gestion) - representativo
+        if (!indexVarGest[f]) indexVarGest[f] = {};
+        if (!indexVarGest[f][desVAR]) indexVarGest[f][desVAR] = {};
+        if (!indexVarGest[f][desVAR][g]) {
+          indexVarGest[f][desVAR][g] = obj;
+        }
+
+        // Index por (form, desVAR, desabrev, gestion) para diccionario
+        if (!indexVarGestAbrev[f]) indexVarGestAbrev[f] = {};
+        if (!indexVarGestAbrev[f][desVAR]) indexVarGestAbrev[f][desVAR] = {};
+        if (!indexVarGestAbrev[f][desVAR][desabrev]) indexVarGestAbrev[f][desVAR][desabrev] = {};
+        if (!indexVarGestAbrev[f][desVAR][desabrev][g]) {
+          indexVarGestAbrev[f][desVAR][desabrev][g] = obj;
+        }
+
+        // Index por (form, desVAR, desvariabl, gestion) para línea de tiempo
+        if (!indexTimeline[f]) indexTimeline[f] = {};
+        if (!indexTimeline[f][desVAR]) indexTimeline[f][desVAR] = {};
+        if (!indexTimeline[f][desVAR][desvariabl]) indexTimeline[f][desVAR][desvariabl] = {};
+        indexTimeline[f][desVAR][desvariabl][g] = obj;
+
+        // Conjuntos de desvariabl y desabrev por desVAR
+        if (!desvariablByFormVar[f]) desvariablByFormVar[f] = {};
+        if (!desvariablByFormVar[f][desVAR]) desvariablByFormVar[f][desVAR] = new Set();
+        if (desvariabl) desvariablByFormVar[f][desVAR].add(desvariabl);
+
+        if (!desabrevByFormVar[f]) desabrevByFormVar[f] = {};
+        if (!desabrevByFormVar[f][desVAR]) desabrevByFormVar[f][desVAR] = new Set();
+        if (desabrev) desabrevByFormVar[f][desVAR].add(desabrev);
+      });
+
+      // Conversion de sets a arrays
+      Object.keys(byForm).forEach(f => {
+        varsByForm[f]      = Array.from(varsByForm[f]).sort();
+        gestionesByForm[f] = Array.from(gestionesByForm[f]).sort((a,b)=>a-b);
+        subvarsCountByForm[f] = subvarSetByForm[f] ? subvarSetByForm[f].size : 0;
+
+        if (desvariablByFormVar[f]) {
+          Object.keys(desvariablByFormVar[f]).forEach(v => {
+            desvariablByFormVar[f][v] = Array.from(desvariablByFormVar[f][v]).sort();
+          });
+        }
+        if (desabrevByFormVar[f]) {
+          Object.keys(desabrevByFormVar[f]).forEach(v => {
+            desabrevByFormVar[f][v] = Array.from(desabrevByFormVar[f][v]).sort();
+          });
+        }
+      });
+
+      // Precalcular variables con cambios y cambios por gestión
+      computeChangesSummary();
+
+      // Poblar select de formularios (selector superior)
+      Object.keys(byForm).sort().forEach(f => {
+        const opt = document.createElement("option");
+        opt.value = f;
+        opt.textContent = `Formulario ${f}`;
+        formSelect.appendChild(opt);
+      });
+
+      // Construir contenido resumen/detalle de cada pestaña de formulario
+      buildAllFormTabs();
+
+      statusMsg.textContent = "Datos cargados correctamente.";
+    } catch (err) {
+      console.error(err);
+      statusMsg.textContent = "Error al cargar o procesar el Excel.";
+    }
+  }
+
+  function computeChangesSummary() {
+    varsWithChanges = {};
+    changedPerGest  = {};
+
+    Object.keys(indexVarGest).forEach(f => {
+      varsWithChanges[f] = new Set();
+      changedPerGest[f]  = {};
+      const gests = gestionesByForm[f];
+      const vars  = varsByForm[f];
+
+      gests.forEach(g => changedPerGest[f][g] = 0);
+
+      vars.forEach(v => {
+        const idx = indexVarGest[f][v];
+        if (!idx) return;
+        let prevSig = null;
+        let hasChange = false;
+
+        gests.forEach(g => {
+          const row = idx[g];
+          if (!row) return;
+          const sig = [
+            row.desvariabl,
+            row.desabrev,
+            row.codsubvar,
+            row.subvarL,
+            row.desgrup
+          ].join("||");
+          if (prevSig !== null && prevSig !== sig) {
+            hasChange = true;
+            changedPerGest[f][g] = (changedPerGest[f][g] || 0) + 1;
+          }
+          prevSig = sig;
+        });
+
+        if (hasChange) varsWithChanges[f].add(v);
+      });
+    });
+  }
+
+  // =============== DICCIONARIO (TAB 1) ===============
+  function renderFormResumen(form) {
+    if (!form || !byForm[form]) {
+      resumenForm.textContent = "Selecciona un formulario para ver su diccionario.";
+      badgeVars.textContent = "Vars: 0";
+      badgeSubs.textContent = "Subvars: 0";
+      badgeGest.textContent = "Gestiones: 0";
+      return;
+    }
+    const nVars = varsByForm[form].length;
+    const nSubs = subvarsCountByForm[form] || 0;
+    const gests = gestionesByForm[form];
+    const nGest = gests.length;
+
+    resumenForm.innerHTML = `
+      <div><b>Formulario ${form}</b></div>
+      <div>Variables distintas (desVAR): <b>${nVars}</b></div>
+      <div>Subvariables distintas (codsubvar): <b>${nSubs}</b></div>
+      <div>Rango de gestiones: <b>${gests[0]} - ${gests[gests.length-1]}</b> (${nGest} gestiones)</div>
+    `;
+    badgeVars.textContent = `Vars: ${nVars}`;
+    badgeSubs.textContent = `Subvars: ${nSubs}`;
+    badgeGest.textContent = `Gestiones: ${nGest}`;
+  }
+
+  function renderVariableList() {
+    variableListDiv.innerHTML = "";
+    if (!currentForm || !varsByForm[currentForm]) return;
+
+    const allVars = varsByForm[currentForm];
+    const searchTxt = searchVarInput.value.trim().toLowerCase();
+    const onlyCh = onlyChangedToggle.checked;
+    const changedSet = varsWithChanges[currentForm] || new Set();
+    const rowsForm = byForm[currentForm];
+
+    const filtered = allVars.filter(v => {
+      if (onlyCh && !changedSet.has(v)) return false;
+      if (!searchTxt) return true;
+      const rep = rowsForm.find(r => r.desVAR === v);
+      if (!rep) return false;
+      const inStr =
+        (rep.desVAR      || "").toLowerCase().includes(searchTxt) ||
+        (rep.desvariabl  || "").toLowerCase().includes(searchTxt) ||
+        (rep.desabrev    || "").toLowerCase().includes(searchTxt);
+      return inStr;
+    });
+
+    if (!filtered.length) {
+      variableListDiv.textContent = "No hay variables que cumplan el filtro.";
+      return;
+    }
+
+    filtered.forEach(v => {
+      const item = document.createElement("div");
+      item.className = "variable-item";
+      if (v === currentVar) item.classList.add("active");
+      if ((varsWithChanges[currentForm] || new Set()).has(v)) {
+        item.classList.add("changed-tag");
+      }
+      item.textContent = v;
+      item.addEventListener("click", () => {
+        currentVar = v;
+        currentDicAbrev = null;
+        renderVariableList();
+        syncDicAbrev();
+        renderVariableDetail();
+        syncTimelineControls(); // actualizar controles de línea de tiempo
+      });
+      variableListDiv.appendChild(item);
+    });
+  }
+
+  function syncDicAbrev() {
+    dicDesabrevSelect.innerHTML = "<option value=''>-- Selecciona desabrev --</option>";
+    if (!currentForm || !currentVar) return;
+    const lista = desabrevByFormVar[currentForm] && desabrevByFormVar[currentForm][currentVar];
+    if (!lista || !lista.length) return;
+    lista.forEach(ab => {
+      const opt = document.createElement("option");
+      opt.value = ab;
+      opt.textContent = ab;
+      dicDesabrevSelect.appendChild(opt);
+    });
+  }
+
+  function renderVariableDetail() {
+    detailTableContainer.innerHTML = "";
+    variableMeta.textContent = "";
+    if (!currentForm || !currentVar) {
+      variableTitle.textContent = "Ninguna variable seleccionada.";
+      return;
+    }
+    variableTitle.textContent = currentVar;
+
+    if (!currentDicAbrev) {
+      variableMeta.innerHTML = `
+        <div>Selecciona un <b>desabrev</b> para esta desVAR.</div>
+      `;
+      detailTableContainer.innerHTML = "<div class='small-note'>Esperando selección de desabrev...</div>";
+      return;
+    }
+
+    const idxAb =
+      indexVarGestAbrev[currentForm] &&
+      indexVarGestAbrev[currentForm][currentVar] &&
+      indexVarGestAbrev[currentForm][currentVar][currentDicAbrev];
+
+    const gests = gestionesByForm[currentForm];
+    if (!idxAb || !gests || !gests.length) {
+      detailTableContainer.textContent = "No hay registros para esta combinación (desVAR, desabrev).";
+      return;
+    }
+
+    const gestsWithRow = gests.filter(g => idxAb[g]);
+    if (!gestsWithRow.length) {
+      detailTableContainer.textContent = "No hay registros para esta combinación (desVAR, desabrev).";
+      return;
+    }
+
+    const firstRow = idxAb[gestsWithRow[0]];
+    variableMeta.innerHTML = `
+      <div><b>desVAR:</b> ${firstRow.desVAR || "-"}</div>
+      <div><b>desabrev seleccionado:</b> ${currentDicAbrev}</div>
+      <div><b>DesVariabl (ejemplo):</b> ${firstRow.desvariabl || "-"}</div>
+      <div><b>Grupo (desgrup):</b> ${firstRow.desgrup || "-"}</div>
+      <div><b>Grupo 2024 (desgrupo2024):</b> ${firstRow.desgrupo2024 || "-"}</div>
+    `;
+
+    const atributos = [
+      "desvariabl",
+      "desabrev",
+      "desgrup",
+      "desgrupo2024",
+      "codsubvar",
+      "subvarL",
+      "subvariable"
+    ];
+
+    let html = "<table><thead><tr><th>Atributo</th>";
+    gests.forEach(g => {
+      html += `<th>${g}</th>`;
+    });
+    html += "</tr></thead><tbody>";
+
+    atributos.forEach(attr => {
+      html += `<tr><td><b>${attr}</b></td>`;
+      let prevVal = null;
+      gests.forEach(g => {
+        const row = idxAb[g];
+        const val = row ? (row[attr] ?? "") : "";
+        const changed = prevVal !== null && prevVal !== val;
+        html += `<td class="${changed ? "changed" : ""}">${val}</td>`;
+        if (val !== "") prevVal = val;
+      });
+      html += "</tr>";
+    });
+
+    html += "</tbody></table>";
+    detailTableContainer.innerHTML = html;
+  }
+
+  btnDownloadVar.addEventListener("click", () => {
+    const table = detailTableContainer.querySelector("table");
+    if (!table) {
+      alert("No hay datos para descargar.");
+      return;
+    }
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Variable" });
+    const name = currentForm && currentVar && currentDicAbrev
+      ? `dicc_${currentForm}_${currentVar}_${currentDicAbrev}.xlsx`
+      : "diccionario_snis_variable.xlsx";
+    XLSX.writeFile(wb, name);
+  });
+
+  dicDesabrevSelect.addEventListener("change", () => {
+    currentDicAbrev = dicDesabrevSelect.value || null;
+    renderVariableDetail();
+  });
+
+  // =============== LÍNEA DE TIEMPO (TAB 2) ===============
+  function syncTimelineControls() {
+    ltDesvarSelect.innerHTML = "<option value=''>-- Selecciona --</option>";
+    ltDesvariablSelect.innerHTML = "<option value=''>-- Selecciona --</option>";
+    timelineTableContainer.innerHTML = "";
+
+    if (!currentForm || !varsByForm[currentForm]) return;
+    varsByForm[currentForm].forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      ltDesvarSelect.appendChild(opt);
+    });
+
+    if (currentVar && varsByForm[currentForm].includes(currentVar)) {
+      ltDesvarSelect.value = currentVar;
+      populateDesvariablOptions();
+    }
+  }
+
+  function populateDesvariablOptions() {
+    ltDesvariablSelect.innerHTML = "<option value=''>-- Selecciona --</option>";
+    timelineTableContainer.innerHTML = "";
+    if (!currentForm) return;
+    const v = ltDesvarSelect.value;
+    if (!v || !desvariablByFormVar[currentForm] || !desvariablByFormVar[currentForm][v]) return;
+
+    desvariablByFormVar[currentForm][v].forEach(dv => {
+      const opt = document.createElement("option");
+      opt.value = dv;
+      opt.textContent = dv;
+      ltDesvariablSelect.appendChild(opt);
+    });
+  }
+
+  function renderTimelineTable() {
+    timelineTableContainer.innerHTML = "";
+    if (!currentForm) return;
+    const v  = ltDesvarSelect.value;
+    const dv = ltDesvariablSelect.value;
+    if (!v || !dv) return;
+
+    const idx = indexTimeline[currentForm] &&
+                indexTimeline[currentForm][v] &&
+                indexTimeline[currentForm][v][dv];
+    const gests = gestionesByForm[currentForm];
+    if (!idx || !gests || !gests.length) {
+      timelineTableContainer.textContent = "No hay datos para esta combinación (desVAR, desvariabl).";
+      return;
+    }
+
+    const atributos = [
+      "desvariabl",
+      "desabrev",
+      "desgrup",
+      "desgrupo2024",
+      "codsubvar",
+      "subvarL",
+      "subvariable"
+    ];
+
+    let html = "<table><thead><tr><th>Atributo</th>";
+    gests.forEach(g => html += `<th>${g}</th>`);
+    html += "</tr></thead><tbody>";
+
+    atributos.forEach(attr => {
+      html += `<tr><td><b>${attr}</b></td>`;
+      let prevVal = null;
+      gests.forEach(g => {
+        const row = idx[g];
+        const val = row ? (row[attr] ?? "") : "";
+        const changed = prevVal !== null && prevVal !== val;
+        html += `<td class="${changed ? "changed" : ""}">${val}</td>`;
+        if (val !== "") prevVal = val;
+      });
+      html += "</tr>";
+    });
+
+    html += "</tbody></table>";
+    timelineTableContainer.innerHTML = html;
+  }
+
+  ltDesvarSelect.addEventListener("change", () => {
+    populateDesvariablOptions();
+  });
+
+  ltDesvariablSelect.addEventListener("change", () => {
+    renderTimelineTable();
+  });
+
+  btnTimelineExcel.addEventListener("click", () => {
+    const table = timelineTableContainer.querySelector("table");
+    if (!table) {
+      alert("No hay datos de línea de tiempo para descargar.");
+      return;
+    }
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Timeline" });
+    const name = currentForm
+      ? `timeline_${currentForm}.xlsx`
+      : "timeline_snis.xlsx";
+    XLSX.writeFile(wb, name);
+  });
+
+  // =============== COMPARAR GESTIONES (TAB 3) ===============
+  function syncCompareGestiones() {
+    cmpGestA.innerHTML = "<option value=''>-- Selecciona --</option>";
+    cmpGestB.innerHTML = "<option value=''>-- Selecciona --</option>";
+    compareTableContainer.innerHTML = "";
+    cmpStatNew.textContent      = "Nuevas: 0";
+    cmpStatDeleted.textContent  = "Eliminadas: 0";
+    cmpStatChanged.textContent  = "Modificadas: 0";
+
+    if (!currentForm || !gestionesByForm[currentForm]) return;
+    gestionesByForm[currentForm].forEach(g => {
+      const o1 = document.createElement("option");
+      o1.value = g;
+      o1.textContent = g;
+      cmpGestA.appendChild(o1);
+
+      const o2 = document.createElement("option");
+      o2.value = g;
+      o2.textContent = g;
+      cmpGestB.appendChild(o2);
+    });
+  }
+
+  function runCompare() {
+    compareTableContainer.innerHTML = "";
+    if (!currentForm) {
+      alert("Selecciona un formulario primero.");
+      return;
+    }
+    const gA = Number(cmpGestA.value);
+    const gB = Number(cmpGestB.value);
+    if (!gA || !gB || gA === gB) {
+      alert("Selecciona gestiones distintas A y B.");
+      return;
+    }
+
+    const vars  = varsByForm[currentForm];
+    const idxVG = indexVarGest[currentForm];
+
+    let newCount = 0;
+    let delCount = 0;
+    let chgCount = 0;
+
+    let rows = [];
+
+    vars.forEach(v => {
+      const idx = idxVG[v] || {};
+      const rA = idx[gA];
+      const rB = idx[gB];
+
+      let estado = "";
+      let cambios = [];
+
+      if (rA && !rB) {
+        estado = "Eliminada";
+        delCount++;
+      } else if (!rA && rB) {
+        estado = "Nueva";
+        newCount++;
+      } else if (rA && rB) {
+        if (rA.desvariabl !== rB.desvariabl) cambios.push("desvariabl");
+        if (rA.desabrev   !== rB.desabrev)   cambios.push("desabrev");
+        if (rA.codsubvar  !== rB.codsubvar)  cambios.push("codsubvar");
+        if (rA.subvarL    !== rB.subvarL)    cambios.push("subvarL");
+        if (rA.desgrup    !== rB.desgrup)    cambios.push("desgrup");
+
+        if (cambios.length) {
+          estado = "Modificada";
+          chgCount++;
+        }
+      }
+
+      if (!estado) return;
+
+      rows.push({
+        desVAR: v,
+        desvariablA: rA ? rA.desvariabl : "",
+        desvariablB: rB ? rB.desvariabl : "",
+        estado,
+        cambios: cambios.join(", ")
+      });
+    });
+
+    cmpStatNew.textContent     = "Nuevas: "      + newCount;
+    cmpStatDeleted.textContent = "Eliminadas: "  + delCount;
+    cmpStatChanged.textContent = "Modificadas: " + chgCount;
+
+    if (!rows.length) {
+      compareTableContainer.textContent = "No se detectaron diferencias entre las gestiones seleccionadas.";
+      return;
+    }
+
+    let html = "<table><thead><tr>" +
+      "<th>desVAR</th>" +
+      `<th>desvariabl (${gA})</th>` +
+      `<th>desvariabl (${gB})</th>` +
+      "<th>Estado</th>" +
+      "<th>Cambios</th>" +
+      "</tr></thead><tbody>";
+
+    rows.forEach(r => {
+      html += "<tr>" +
+        `<td>${r.desVAR}</td>` +
+        `<td>${r.desvariablA}</td>` +
+        `<td>${r.desvariablB}</td>` +
+        `<td>${r.estado}</td>` +
+        `<td>${r.cambios}</td>` +
+      "</tr>";
+    });
+
+    html += "</tbody></table>";
+    compareTableContainer.innerHTML = html;
+  }
+
+  btnRunCompare.addEventListener("click", runCompare);
+
+  // =============== GRÁFICOS GENERALES (TAB 4) ===============
+  function destroyCharts() {
+    if (chartVarsPerGest)   chartVarsPerGest.destroy();
+    if (chartSubsPerGest)   chartSubsPerGest.destroy();
+    if (chartGroups)        chartGroups.destroy();
+    if (chartChangedPerGest)chartChangedPerGest.destroy();
+    chartVarsPerGest = chartSubsPerGest = chartGroups = chartChangedPerGest = null;
+  }
+
+  function renderCharts() {
+    destroyCharts();
+    if (!currentForm || !byForm[currentForm]) return;
+
+    const gests = gestionesByForm[currentForm];
+    const rows  = byForm[currentForm];
+
+    // 1) Variables por gestión
+    const varsPerGest = {};
+    gests.forEach(g => varsPerGest[g] = new Set());
+    rows.forEach(r => {
+      varsPerGest[r.idgestion].add(r.desVAR);
+    });
+    const varsCounts = gests.map(g => varsPerGest[g].size);
+
+    chartVarsPerGest = new Chart(chartVarsPerGestCanvas, {
+      type: 'bar',
+      data: {
+        labels: gests,
+        datasets: [{
+          label: 'Variables (desVAR)',
+          data: varsCounts
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: { ticks: { font: { size: 10 } } },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    // 2) Subvariables por gestión
+    const subsPerGest = {};
+    gests.forEach(g => subsPerGest[g] = new Set());
+    rows.forEach(r => {
+      if (r.codsubvar !== null && r.codsubvar !== undefined) {
+        subsPerGest[r.idgestion].add(r.codsubvar);
+      }
+    });
+    const subsCounts = gests.map(g => subsPerGest[g].size);
+
+    chartSubsPerGest = new Chart(chartSubsPerGestCanvas, {
+      type: 'line',
+      data: {
+        labels: gests,
+        datasets: [{
+          label: 'Subvariables (codsubvar)',
+          data: subsCounts,
+          tension: 0.2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { font: { size: 10 } } },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    // 3) Distribución por grupo (desgrup) usando la última gestión
+    const lastGest = gests[gests.length - 1];
+    const groupCounts = {};
+    rows.forEach(r => {
+      if (r.idgestion === lastGest) {
+        const gName = r.desgrup || "Sin grupo";
+        groupCounts[gName] = (groupCounts[gName] || 0) + 1;
+      }
+    });
+    const groupLabels = Object.keys(groupCounts);
+    const groupValues = groupLabels.map(k => groupCounts[k]);
+
+    chartGroups = new Chart(chartGroupsCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: groupLabels,
+        datasets: [{
+          data: groupValues
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { font: { size: 10 } }
+          }
+        }
+      }
+    });
+
+    // 4) Variables modificadas por gestión (precalculado)
+    const chgPerGest = changedPerGest[currentForm] || {};
+    const chgValues = gests.map(g => chgPerGest[g] || 0);
+
+    chartChangedPerGest = new Chart(chartChangedPerGestCanvas, {
+      type: 'bar',
+      data: {
+        labels: gests,
+        datasets: [{
+          label: 'Variables modificadas',
+          data: chgValues
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { font: { size: 10 } } },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  // =============== PESTAÑAS POR FORMULARIO 301–305 ===============
+  function buildAllFormTabs() {
+    FORM_CODES.forEach(code => {
+      const rows = byForm[code];
+      const summaryBox   = document.getElementById(`form${code}SummaryBox`);
+      const resumenDiv   = document.getElementById(`form${code}ResumenTable`);
+      const detalleDiv   = document.getElementById(`form${code}DetalleTable`);
+      const searchInput  = document.getElementById(`form${code}Search`);
+      const groupSelect  = document.getElementById(`form${code}GroupSelect`);
+
+      if (!summaryBox || !resumenDiv || !detalleDiv || !searchInput || !groupSelect) return;
+
+      formTabState[code] = {
+        rows: rows || [],
+        resumenDiv,
+        detalleDiv,
+        searchInput,
+        groupSelect
+      };
+
+      if (!rows || !rows.length) {
+        summaryBox.textContent = `No hay datos para el formulario ${code} en el archivo.`;
+        resumenDiv.innerHTML = "";
+        detalleDiv.innerHTML = "";
+        return;
+      }
+
+      // Resumen numérico (sobre todo el formulario, sin filtros)
+      const varsSet = new Set(rows.map(r => r.desVAR));
+      const subsSet = new Set(rows.map(r => r.codsubvar).filter(v => v !== null && v !== undefined));
+      const gestsSet= new Set(rows.map(r => r.idgestion));
+      const gestsArr= Array.from(gestsSet).sort((a,b)=>a-b);
+
+      summaryBox.innerHTML = `
+        <div><b>Formulario ${code}</b></div>
+        <div>Variables distintas (desVAR): <b>${varsSet.size}</b></div>
+        <div>Subvariables distintas (codsubvar): <b>${subsSet.size}</b></div>
+        <div>Gestiones en el formulario: <b>${gestsArr.join(", ")}</b></div>
+      `;
+
+      // Poblar select de grupos (desgrup) sobre todo el formulario
+      const groupLabelsSet = new Set();
+      rows.forEach(r => {
+        const glabel = r.desgrup || "Sin grupo";
+        groupLabelsSet.add(glabel);
+      });
+      groupSelect.innerHTML = "<option value=''>Todos los grupos</option>";
+      Array.from(groupLabelsSet).sort().forEach(gl => {
+        const opt = document.createElement("option");
+        opt.value = gl;
+        opt.textContent = gl;
+        groupSelect.appendChild(opt);
+      });
+
+      // Filtros: texto + grupo
+      searchInput.addEventListener("input", () => renderFormTab(code));
+      groupSelect.addEventListener("change", () => renderFormTab(code));
+
+      // Render inicial sin filtros
+      renderFormTab(code);
+    });
+
+    // Botones de descarga y gráficos por formulario
+    FORM_CODES.forEach(code => {
+      const btnRes = document.getElementById(`btnForm${code}DownloadResumen`);
+      const btnDet = document.getElementById(`btnForm${code}DownloadDetalle`);
+      const btnCh  = document.getElementById(`btnForm${code}Charts`);
+
+      if (btnRes) btnRes.addEventListener("click", () => {
+        const cont = document.getElementById(`form${code}ResumenTable`);
+        const table = cont ? cont.querySelector("table") : null;
+        if (!table) { alert("No hay resumen para descargar."); return; }
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Resumen" });
+        XLSX.writeFile(wb, `form${code}_resumen.xlsx`);
+      });
+
+      if (btnDet) btnDet.addEventListener("click", () => {
+        const cont = document.getElementById(`form${code}DetalleTable`);
+        const table = cont ? cont.querySelector("table") : null;
+        if (!table) { alert("No hay detalle para descargar."); return; }
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Detalle" });
+        XLSX.writeFile(wb, `form${code}_detalle.xlsx`);
+      });
+
+      if (btnCh) btnCh.addEventListener("click", () => {
+        renderChartsForForm(code);
+      });
+    });
+  }
+
+  // Render de tablas (Resumen + Detalle) con filtros texto + grupo
+  function renderFormTab(formCode) {
+    const state = formTabState[formCode];
+    if (!state) return;
+
+    const { rows, resumenDiv, detalleDiv, searchInput, groupSelect } = state;
+    const txt = searchInput.value.trim().toLowerCase();
+    const grp = groupSelect.value; // "" => todos
+
+    // Filtrado por texto + grupo
+    const filtered = rows.filter(r => {
+      const groupLabel = r.desgrup || "Sin grupo";
+      if (grp && groupLabel !== grp) return false;
+
+      if (!txt) return true;
+
+      const fields = [
+        r.desVAR,
+        r.desvariabl,
+        r.desabrev,
+        r.codsubvar !== undefined && r.codsubvar !== null ? String(r.codsubvar) : "",
+        r.subvarL,
+        r.subvariable
+      ];
+      const found = fields.some(f => (f || "").toString().toLowerCase().includes(txt));
+      return found;
+    });
+
+    if (!filtered.length) {
+      resumenDiv.innerHTML = "<div class='small-note'>No hay registros que cumplan el filtro.</div>";
+      detalleDiv.innerHTML = "<div class='small-note'>No hay registros que cumplan el filtro.</div>";
+      return;
+    }
+
+    // ---- Tabla Resumen (una fila por desVAR) sobre el subconjunto filtrado ----
+    const infoByVar = {};
+    filtered.forEach(r => {
+      const v = r.desVAR;
+      if (!infoByVar[v]) {
+        infoByVar[v] = {
+          gests: new Set(),
+          subvars: new Set()
+        };
+      }
+      infoByVar[v].gests.add(r.idgestion);
+      if (r.codsubvar !== null && r.codsubvar !== undefined) {
+        infoByVar[v].subvars.add(r.codsubvar);
+      }
+    });
+
+    let htmlRes = "<table><thead><tr>" +
+      "<th>desVAR</th>" +
+      "<th>#Subvariables</th>" +
+      "<th>Primera gestión</th>" +
+      "<th>Última gestión</th>" +
+      "<th>#Gestiones</th>" +
+    "</tr></thead><tbody>";
+
+    Object.keys(infoByVar).sort().forEach(v => {
+      const gArr = Array.from(infoByVar[v].gests).sort((a,b)=>a-b);
+      const sArr = Array.from(infoByVar[v].subvars);
+      htmlRes += "<tr>" +
+        `<td>${v}</td>` +
+        `<td>${sArr.length}</td>` +
+        `<td>${gArr[0]}</td>` +
+        `<td>${gArr[gArr.length-1]}</td>` +
+        `<td>${gArr.length}</td>` +
+      "</tr>";
+    });
+
+    htmlRes += "</tbody></table>";
+    resumenDiv.innerHTML = htmlRes;
+
+    // ---- Tabla Detalle (una fila por gestión / subvariable) sobre el subconjunto filtrado ----
+    const rowsSorted = filtered.slice().sort((a,b) => {
+      if (a.desVAR !== b.desVAR) return a.desVAR.localeCompare(b.desVAR);
+      const csA = a.codsubvar ?? 0;
+      const csB = b.codsubvar ?? 0;
+      if (csA !== csB) return csA - csB;
+      return a.idgestion - b.idgestion;
+    });
+
+    let htmlDet = "<table><thead><tr>" +
+      "<th>Gestión</th>" +
+      "<th>desVAR</th>" +
+      "<th>desvariabl</th>" +
+      "<th>desabrev</th>" +
+      "<th>codsubvar</th>" +
+      "<th>subvarL</th>" +
+      "<th>desgrup</th>" +
+      "<th>desgrupo2024</th>" +
+    "</tr></thead><tbody>";
+
+    rowsSorted.forEach(r => {
+      htmlDet += "<tr>" +
+        `<td>${r.idgestion}</td>` +
+        `<td>${r.desVAR}</td>` +
+        `<td>${r.desvariabl || ""}</td>` +
+        `<td>${r.desabrev || ""}</td>` +
+        `<td>${r.codsubvar !== undefined && r.codsubvar !== null ? r.codsubvar : ""}</td>` +
+        `<td>${r.subvarL || ""}</td>` +
+        `<td>${r.desgrup || ""}</td>` +
+        `<td>${r.desgrupo2024 || ""}</td>` +
+      "</tr>";
+    });
+
+    htmlDet += "</tbody></table>";
+    detalleDiv.innerHTML = htmlDet;
+  }
+
+  function renderChartsForForm(formCode) {
+    const rows = byForm[formCode];
+    if (!rows || !rows.length) {
+      alert(`No hay datos para el formulario ${formCode}.`);
+      return;
+    }
+    const gests = gestionesByForm[formCode];
+    if (!gests || !gests.length) {
+      alert(`No hay gestiones registradas para el formulario ${formCode}.`);
+      return;
+    }
+
+    if (!formCharts[formCode]) formCharts[formCode] = {};
+    const fc = formCharts[formCode];
+
+    // Destruir gráficos anteriores de ese formulario
+    if (fc.varsChart)   fc.varsChart.destroy();
+    if (fc.subsChart)   fc.subsChart.destroy();
+    if (fc.groupsChart) fc.groupsChart.destroy();
+    if (fc.chgChart)    fc.chgChart.destroy();
+
+    const varsCanvas   = document.getElementById(`chartF${formCode}VarsPerGest`);
+    const subsCanvas   = document.getElementById(`chartF${formCode}SubsPerGest`);
+    const groupsCanvas = document.getElementById(`chartF${formCode}Groups`);
+    const chgCanvas    = document.getElementById(`chartF${formCode}Changed`);
+
+    // 1) Variables por gestión
+    const varsPerGest = {};
+    gests.forEach(g => varsPerGest[g] = new Set());
+    rows.forEach(r => {
+      varsPerGest[r.idgestion].add(r.desVAR);
+    });
+    const varsCounts = gests.map(g => varsPerGest[g].size);
+
+    fc.varsChart = new Chart(varsCanvas, {
+      type: 'bar',
+      data: {
+        labels: gests,
+        datasets: [{
+          label: 'Variables (desVAR)',
+          data: varsCounts
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { font: { size: 10 } } },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    // 2) Subvariables por gestión
+    const subsPerGest = {};
+    gests.forEach(g => subsPerGest[g] = new Set());
+    rows.forEach(r => {
+      if (r.codsubvar !== null && r.codsubvar !== undefined) {
+        subsPerGest[r.idgestion].add(r.codsubvar);
+      }
+    });
+    const subsCounts = gests.map(g => subsPerGest[g].size);
+
+    fc.subsChart = new Chart(subsCanvas, {
+      type: 'line',
+      data: {
+        labels: gests,
+        datasets: [{
+          label: 'Subvariables (codsubvar)',
+          data: subsCounts,
+          tension: 0.2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { font: { size: 10 } } },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    // 3) Distribución por grupo en la última gestión
+    const lastGest = gests[gests.length - 1];
+    const groupCounts = {};
+    rows.forEach(r => {
+      if (r.idgestion === lastGest) {
+        const gName = r.desgrup || "Sin grupo";
+        groupCounts[gName] = (groupCounts[gName] || 0) + 1;
+      }
+    });
+    const groupLabels = Object.keys(groupCounts);
+    const groupValues = groupLabels.map(k => groupCounts[k]);
+
+    fc.groupsChart = new Chart(groupsCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: groupLabels,
+        datasets: [{
+          data: groupValues
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { font: { size: 10 } }
+          }
+        }
+      }
+    });
+
+    // 4) Variables modificadas por gestión (usamos changedPerGest precomputado)
+    const chgPerGest = changedPerGest[formCode] || {};
+    const chgValues = gests.map(g => chgPerGest[g] || 0);
+
+    fc.chgChart = new Chart(chgCanvas, {
+      type: 'bar',
+      data: {
+        labels: gests,
+        datasets: [{
+          label: 'Variables modificadas',
+          data: chgValues
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { font: { size: 10 } } },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  // =============== TABS ===============
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById(tab.dataset.tab).classList.add("active");
+    });
+  });
+
+  // =============== EVENTOS GLOBALES ===============
+  formSelect.addEventListener("change", () => {
+    currentForm = formSelect.value || null;
+    currentVar  = null;
+    currentDicAbrev = null;
+    renderFormResumen(currentForm);
+    renderVariableList();
+    syncDicAbrev();
+    renderVariableDetail();
+    syncTimelineControls();
+    syncCompareGestiones();
+    renderCharts();
+  });
+
+  searchVarInput.addEventListener("input", () => {
+    renderVariableList();
+  });
+
+  onlyChangedToggle.addEventListener("change", () => {
+    renderVariableList();
+  });
+
+  // Inicio
+  loadExcel();
+});
+</script>
+
+</body>
+</html>
